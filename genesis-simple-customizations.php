@@ -3,7 +3,7 @@
 Plugin Name: Genesis Simple Customizations
 Plugin URI: http://efficientwp.com/genesis-simple-customizations
 Description: Easily make some common customizations in the Genesis > Theme Settings menu instead of writing code snippets in your functions.php file. Must be using the Genesis theme framework.
-Version: 0.3
+Version: 1.0
 Author: Doug Yuen
 Author URI: http://efficientwp.com
 License: GPLv2
@@ -13,17 +13,21 @@ class EWP_Genesis_Simple_Customizations {
 	var $instance;
 	
 	function __construct() {
-		$this->instance =& $this;
-		register_activation_hook( __FILE__, array( $this, 'activation_hook' ) );
-		add_action( 'init', array( $this, 'ewp_gsc_init' ) );	
-		add_action( 'genesis_init', array( $this, 'ewp_gsc_genesis_init' ), 20 );
-		add_action( 'genesis_meta', array( $this, 'ewp_gsc_genesis_meta' ), 20 );
-		add_action( 'wp_head', array( $this, 'ewp_gsc_wp_head' ), 20 );
+		if ( get_template() == 'genesis' ) {
+			$this->instance =& $this;
+			register_activation_hook( __FILE__, array( $this, 'activation_hook' ) );
+			add_action( 'init', array( $this, 'ewp_gsc_init' ) );
+			add_action( 'genesis_init', array( $this, 'ewp_gsc_genesis_init' ), 20 );
+			add_action( 'genesis_meta', array( $this, 'ewp_gsc_genesis_meta' ), 20 );
+			add_action( 'wp_head', array( $this, 'ewp_gsc_wp_head' ), 20 );
+		}
 	}
 
 	/********** ADD METABOX TO THEME SETTINGS MENU **********/
 	function ewp_gsc_init() {
-		add_action( 'genesis_theme_settings_metaboxes', array( $this, 'ewp_gsc_register_metabox' ) );		
+		if ( is_admin() ) {
+			add_action( 'genesis_theme_settings_metaboxes', array( $this, 'ewp_gsc_register_metabox' ) );
+		}
 	}
 
 	/********** EXECUTE CUSTOMIZATIONS ON GENESIS_INIT HOOK **********/
@@ -44,6 +48,15 @@ class EWP_Genesis_Simple_Customizations {
 		if ( genesis_get_option( 'ewp_gsc_remove_edit_link' ) ) {
 			add_filter( 'edit_post_link', '__return_false' );
 		}
+		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_post_content_with_h1' ) ) {
+			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_post_content_with_h1' ), 20 );
+		}
+		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_post_content_without_h1' ) ) {
+			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_post_content_without_h1' ), 20 );
+		}
+		if ( genesis_get_option( 'ewp_gsc_add_featured_image_support_to_pages' ) ) {
+			add_theme_support( 'post-thumbnails', array( 'post', 'page' ) );
+		}
 		if ( genesis_get_option( 'ewp_gsc_custom_search_box_text' ) != '' ) {
 			add_filter( 'genesis_search_text', array( $this, 'ewp_gsc_custom_search_box' ), 20 );
 		}
@@ -59,6 +72,10 @@ class EWP_Genesis_Simple_Customizations {
 		if ( genesis_get_option( 'ewp_gsc_custom_show_content_limit_read_more_link_text' ) != '' ) {
 			add_filter( 'get_the_content_more_link', array( $this, 'ewp_gsc_custom_show_content_limit_read_more_link' ), 20 );
 		}
+		if ( genesis_get_option( 'ewp_gsc_custom_after_post_text' ) != '' ) {
+			add_action( 'genesis_after_entry_content', array( $this, 'ewp_gsc_custom_after_post' ), 20 );
+			add_action( 'genesis_after_post_content', array( $this, 'ewp_gsc_custom_after_post' ), 20 );
+		}
 	}
 
 	/********** EXECUTE CUSTOMIZATIONS ON GENESIS_META HOOK **********/
@@ -70,15 +87,48 @@ class EWP_Genesis_Simple_Customizations {
 
 	/********** EXECUTE CUSTOMIZATIONS ON WP_HEAD HOOK **********/
 	function ewp_gsc_wp_head( ) {
-		if ( genesis_get_option( 'ewp_gsc_remove_subnav_from_top_of_header' ) ) {
-			remove_action( 'genesis_before', 'genesis_do_subnav' );
+		if ( get_template() == 'genesis' ) {
+			if ( genesis_get_option( 'ewp_gsc_remove_subnav_from_top_of_header' ) ) {
+				remove_action( 'genesis_before', 'genesis_do_subnav' );
+			}
+			if ( genesis_get_option( 'ewp_gsc_add_subnav_to_bottom_of_header' ) ) {
+				add_action( 'genesis_after_header', 'genesis_do_subnav' );
+			}
+			if ( genesis_get_option( 'ewp_gsc_remove_favicon' ) ) {
+				remove_action( 'wp_head', 'genesis_load_favicon' );
+			}
 		}
-		if ( genesis_get_option( 'ewp_gsc_add_subnav_to_bottom_of_header' ) ) {
-			add_action( 'genesis_after_header', 'genesis_do_subnav' );
+	}
+
+	/********** OTHER FUNCTIONS **********/
+
+	function ewp_gsc_display_featured_image_above_post_content_with_h1( ) {
+		if ( has_post_thumbnail( ) && is_singular() ) {
+			remove_action( 'genesis_entry_header', 'genesis_do_post_title' );
+			add_filter( 'body_class', 'ewp_gsc_body_class_featured_with_h1' );
+			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
+			echo '<div class="featured-image-background" style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div class="featured-image-inner" style="position: relative; top: 50%; transform: translateY(-50%);">';
+			echo '<h1 class="featured-image">' . get_the_title() . '</h1>';
+			echo '</div></div>';
 		}
-		if ( genesis_get_option( 'ewp_gsc_remove_favicon' ) ) {
-			remove_action( 'wp_head', 'genesis_load_favicon' );
+		return;
+	}
+	function ewp_gsc_display_featured_image_above_post_content_without_h1( ) {
+		if ( has_post_thumbnail( ) && is_singular() ) {
+			add_filter( 'body_class', 'ewp_gsc_body_class_featured_without_h1' );
+			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
+			echo '<div style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div style="position: relative; top: 50%; transform: translateY(-50%);">';
+			echo '</div></div>';
 		}
+		return;
+	}
+	function ewp_gsc_body_class_featured_without_h1( $classes ) {
+     	$classes[] = 'featured-without-h1';
+     	return $classes;
+	}
+	function ewp_gsc_body_class_featured_with_h1( $classes ) {
+     	$classes[] = 'featured-with-h1';
+     	return $classes;
 	}
 
 	/********** CUSTOM TEXT FUNCTIONS **********/
@@ -102,6 +152,12 @@ class EWP_Genesis_Simple_Customizations {
 		$google_fonts_text = genesis_get_option( 'ewp_gsc_custom_google_fonts_text' );
 		wp_enqueue_style( 'google-font', esc_url( $google_fonts_text ), array(), PARENT_THEME_VERSION );
 	}
+	function ewp_gsc_custom_after_post( $text ) {
+		if ( is_single() ) {
+			$after_post_text = genesis_get_option( 'ewp_gsc_custom_after_post_text' );
+			echo '<div>' . do_shortcode( $after_post_text ) . '</div>';
+		}
+	}
 
 	/********** CUSTOM TEXT FUNCTIONS **********/
 	function ewp_gsc_register_metabox( $_genesis_theme_settings_pagehook ) {
@@ -116,21 +172,27 @@ class EWP_Genesis_Simple_Customizations {
 			'remove_post_meta' => 'Remove Post Meta',
 			'remove_footer' => 'Remove Footer',
 			'remove_edit_link' => 'Remove "(Edit)" Link from Frontend',
+			'add_featured_image_support_to_pages' => 'Add Featured Image Support to Pages',
+			'display_featured_image_above_post_content_with_h1' => 'Display Featured Image Above Post Content with H1 Centered Inside',
+			'display_featured_image_above_post_content_without_h1' => 'Display Featured Image Above Post Content with Nothing Inside',
 			'custom_search_box' => 'Custom Search Box Text',
 			'custom_search_button' => 'Custom Search Button Text',
 			'custom_more_tag_read_more_link' => 'Custom More Tag "Read More" Link',
 			'custom_show_content_limit_read_more_link' => 'Custom Show Content Limit "Read More" Link',
-			'custom_google_fonts' => 'Custom Google Fonts URL',
+			'custom_google_fonts' => 'Custom Google Fonts URL (e.g. http://fonts.googleapis.com/css?family=Lato%3A400)',
+			'custom_after_post' => 'Custom After Post Code (Shortcodes Allowed)',
 		);
+		echo '<table cellspacing="10">';
 		foreach( $ewp_gsc_list as $customization => $description ) {
-			echo '<p>';
+			echo '<tr>';
 			if ( strpos( $customization, 'custom_' ) !== FALSE ) {
-				echo '<div style="float:left; width:50%;"><label for="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" >' . $description . '</label></div><div style="float:left;"><input type="text" name="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" id="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" size="30" value="' . genesis_get_option( 'ewp_gsc_' . $customization . '_text' ) . '" /></div><br />';
+				echo '<td width="50%"><label for="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" >' . $description . '</label></td><td width="50%"><input type="text" name="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" id="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . '_text]" size="40" value="' . genesis_get_option( 'ewp_gsc_' . $customization . '_text' ) . '" /></td>';
 			} else {
-				echo '<input type="checkbox" name="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']" id="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']" value="1" ' . checked( 1, genesis_get_option( 'ewp_gsc_' . $customization ), false ) . ' />&nbsp;&nbsp;&nbsp;<label for="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']">' . $description . '</label>';
+				echo '<td colspan="2"><input type="checkbox" name="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']" id="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']" value="1" ' . checked( 1, genesis_get_option( 'ewp_gsc_' . $customization ), false ) . ' />&nbsp;&nbsp;&nbsp;<label for="' . GENESIS_SETTINGS_FIELD . '[ewp_gsc_' . $customization . ']">' . $description . '</label></td>';
 			}
-			echo '</p>';
+			echo '</tr>';
 		}
+		echo '</table>';
 	}
 }
 new EWP_Genesis_Simple_Customizations;
