@@ -2,11 +2,11 @@
 
 Contributors: Doug Yuen
 Author URI: http://efficientwp.com
-Plugin URI: http://efficientwp.com/genesis-simple-customizations
-Tags: genesis, genesiswp, studiopress
+Plugin URI: http://efficientwp.com/plugins/genesis-simple-customizations
+Tags: genesis, genesiswp, studiopress, customize, customization, customizations, hook, hooks, functions, subnav, subnavigation, secondary navigation, header, favicon, post info, post meta, footer, edit link, featured image, search box, search button, read more, google fonts, after post, shortcode, shortcodes
 Requires at least: 3.0
-Tested up to: 4.1
-Stable tag: 1.0
+Tested up to: 4.2.1
+Stable tag: trunk
 License: GPLv2 or later
 
 Easily make some common customizations in the Genesis > Theme Settings menu. The Genesis framework is required.
@@ -17,8 +17,8 @@ Easily make some common customizations in the Genesis > Theme Settings menu inst
 
 On/off options available:
 
-* Remove Subnav from Top of Header
-* Add Subnav to Bottom of Header
+* Remove Subnav (Secondary Navigation) from Top of Header
+* Add Subnav (Secondary Navigation) to Bottom of Header
 * Remove Genesis Favicon
 * Remove Post Info
 * Remove Post Meta
@@ -37,9 +37,9 @@ Customizable options available:
 * Custom Google Fonts URL (e.g. http://fonts.googleapis.com/css?family=Lato%3A400)	
 * Custom After Post Code (Shortcodes Allowed)
 
-Plugin page: [http://efficientwp.com/plugins/genesis-simple-customizations](http://efficientwp.com/plugins/genesis-simple-customizations= "Genesis Simple Customizations").
+[Plugin page on EfficientWP](http://efficientwp.com/plugins/genesis-simple-customizations "Genesis Simple Customizations")
 
-Created by [EfficientWP](http://efficientwp.com= "EfficientWP").
+Created by [EfficientWP](http://efficientwp.com "EfficientWP").
 
 == Installation ==
 
@@ -50,7 +50,7 @@ Created by [EfficientWP](http://efficientwp.com= "EfficientWP").
 
 == Frequently Asked Questions ==
 
-Plugin page: [http://efficientwp.com/plugins/genesis-simple-customizations](http://efficientwp.com/plugins/genesis-simple-customizations= "Genesis Simple Customizations").
+[Plugin page on EfficientWP](http://efficientwp.com/plugins/genesis-simple-customizations "Genesis Simple Customizations")
 
 == Screenshots ==
 
@@ -58,12 +58,15 @@ Plugin page: [http://efficientwp.com/plugins/genesis-simple-customizations](http
 
 == Changelog ==
 
+= 1.1 =
+* Confirmed compatibility up to WordPress 4.2.1
+
 = 1.0 =
 * Improved compatibility - added check for Genesis in wp_head
 * Added option "Add Featured Image Support to Pages"
 * Added option "Display Featured Image Above Post Content with H1"
 * Added option "Display Featured Image Above Post Content without H1"
-* Added text field "Custom After Post"
+* Added text field "Custom After Post Code (Shortcodes Allowed)"
 
 = 0.3 =
 * Added banner image

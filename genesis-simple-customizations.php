@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Genesis Simple Customizations
-Plugin URI: http://efficientwp.com/genesis-simple-customizations
+Plugin URI: http://efficientwp.com/plugins/genesis-simple-customizations
 Description: Easily make some common customizations in the Genesis > Theme Settings menu instead of writing code snippets in your functions.php file. Must be using the Genesis theme framework.
-Version: 1.0
+Version: 1.1
 Author: Doug Yuen
 Author URI: http://efficientwp.com
 License: GPLv2
@@ -48,14 +48,17 @@ class EWP_Genesis_Simple_Customizations {
 		if ( genesis_get_option( 'ewp_gsc_remove_edit_link' ) ) {
 			add_filter( 'edit_post_link', '__return_false' );
 		}
+		if ( genesis_get_option( 'ewp_gsc_add_featured_image_support_to_pages' ) ) {
+			add_theme_support( 'post-thumbnails', array( 'post', 'page' ) );
+		}
 		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_post_content_with_h1' ) ) {
 			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_post_content_with_h1' ), 20 );
 		}
 		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_post_content_without_h1' ) ) {
 			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_post_content_without_h1' ), 20 );
 		}
-		if ( genesis_get_option( 'ewp_gsc_add_featured_image_support_to_pages' ) ) {
-			add_theme_support( 'post-thumbnails', array( 'post', 'page' ) );
+		if ( genesis_get_option( 'ewp_gsc_display_category_descriptions' ) ) {
+			add_action( 'genesis_before_loop', array( $this, 'ewp_gsc_display_category_descriptions' ), 20 );
 		}
 		if ( genesis_get_option( 'ewp_gsc_custom_search_box_text' ) != '' ) {
 			add_filter( 'genesis_search_text', array( $this, 'ewp_gsc_custom_search_box' ), 20 );
@@ -80,7 +83,7 @@ class EWP_Genesis_Simple_Customizations {
 
 	/********** EXECUTE CUSTOMIZATIONS ON GENESIS_META HOOK **********/
 	function ewp_gsc_genesis_meta () {
-		if ( genesis_get_option( 'ewp_gsc_remove_favicon' ) ) { // 
+		if ( genesis_get_option( 'ewp_gsc_remove_favicon' ) ) {
 			remove_action( 'genesis_meta', 'genesis_load_favicon' );
 		}
 	}
@@ -130,6 +133,13 @@ class EWP_Genesis_Simple_Customizations {
      	$classes[] = 'featured-with-h1';
      	return $classes;
 	}
+	function ewp_gsc_display_category_descriptions( ) {
+	    global $paged;
+	    $category_description = category_description();
+	    if ( ( $paged == 0 ) && ( $category_description != '' ) ) {
+	        echo '<div class="entry-content category-description" itemprop="text">' . category_description() . '</div>';
+	    }
+	}
 
 	/********** CUSTOM TEXT FUNCTIONS **********/
 	function ewp_gsc_custom_more_tag_read_more_link( $text ) {
@@ -159,7 +169,7 @@ class EWP_Genesis_Simple_Customizations {
 		}
 	}
 
-	/********** CUSTOM TEXT FUNCTIONS **********/
+	/********** CREATE PLUGIN MENU **********/
 	function ewp_gsc_register_metabox( $_genesis_theme_settings_pagehook ) {
 		add_meta_box('ewp-gsc', __( 'Genesis Simple Customizations', 'genesis-simple-customizations' ), array( $this, 'ewp_gsc_create_sitewide_metabox' ), $_genesis_theme_settings_pagehook, 'main', 'high');
 	}
@@ -175,6 +185,7 @@ class EWP_Genesis_Simple_Customizations {
 			'add_featured_image_support_to_pages' => 'Add Featured Image Support to Pages',
 			'display_featured_image_above_post_content_with_h1' => 'Display Featured Image Above Post Content with H1 Centered Inside',
 			'display_featured_image_above_post_content_without_h1' => 'Display Featured Image Above Post Content with Nothing Inside',
+			'display_category_descriptions' => 'Display Category Descriptions Above Category Archives',
 			'custom_search_box' => 'Custom Search Box Text',
 			'custom_search_button' => 'Custom Search Button Text',
 			'custom_more_tag_read_more_link' => 'Custom More Tag "Read More" Link',
