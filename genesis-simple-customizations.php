@@ -2,8 +2,8 @@
 /*
 Plugin Name: Genesis Simple Customizations
 Plugin URI: http://efficientwp.com/plugins/genesis-simple-customizations
-Description: Easily make some common customizations in the Genesis > Theme Settings menu instead of writing code snippets in your functions.php file. Must be using the Genesis theme framework.
-Version: 1.1
+Description: Easily make certain customizations to your Genesis-powered site in the Genesis Theme Settings menu. You must be using the Genesis theme framework.
+Version: 1.2
 Author: Doug Yuen
 Author URI: http://efficientwp.com
 License: GPLv2
@@ -15,12 +15,17 @@ class EWP_Genesis_Simple_Customizations {
 	function __construct() {
 		if ( get_template() == 'genesis' ) {
 			$this->instance =& $this;
-			register_activation_hook( __FILE__, array( $this, 'activation_hook' ) );
+			register_activation_hook( __FILE__, array( $this, 'ewp_gsc_activation' ) );
 			add_action( 'init', array( $this, 'ewp_gsc_init' ) );
 			add_action( 'genesis_init', array( $this, 'ewp_gsc_genesis_init' ), 20 );
 			add_action( 'genesis_meta', array( $this, 'ewp_gsc_genesis_meta' ), 20 );
 			add_action( 'wp_head', array( $this, 'ewp_gsc_wp_head' ), 20 );
 		}
+	}
+
+	/********** PLUGIN ACTIVATION **********/
+	function ewp_gsc_activation() {
+
 	}
 
 	/********** ADD METABOX TO THEME SETTINGS MENU **********/
@@ -50,6 +55,12 @@ class EWP_Genesis_Simple_Customizations {
 		}
 		if ( genesis_get_option( 'ewp_gsc_add_featured_image_support_to_pages' ) ) {
 			add_theme_support( 'post-thumbnails', array( 'post', 'page' ) );
+		}
+		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_page_content_with_h1' ) ) {
+			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_page_content_with_h1' ), 20 );
+		}
+		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_page_content_without_h1' ) ) {
+			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_page_content_without_h1' ), 20 );
 		}
 		if ( genesis_get_option( 'ewp_gsc_display_featured_image_above_post_content_with_h1' ) ) {
 			add_action( 'genesis_after_header', array( $this, 'ewp_gsc_display_featured_image_above_post_content_with_h1' ), 20 );
@@ -89,7 +100,7 @@ class EWP_Genesis_Simple_Customizations {
 	}
 
 	/********** EXECUTE CUSTOMIZATIONS ON WP_HEAD HOOK **********/
-	function ewp_gsc_wp_head( ) {
+	function ewp_gsc_wp_head() {
 		if ( get_template() == 'genesis' ) {
 			if ( genesis_get_option( 'ewp_gsc_remove_subnav_from_top_of_header' ) ) {
 				remove_action( 'genesis_before', 'genesis_do_subnav' );
@@ -105,8 +116,8 @@ class EWP_Genesis_Simple_Customizations {
 
 	/********** OTHER FUNCTIONS **********/
 
-	function ewp_gsc_display_featured_image_above_post_content_with_h1( ) {
-		if ( has_post_thumbnail( ) && is_singular() ) {
+	function ewp_gsc_display_featured_image_above_page_content_with_h1() {
+		if ( is_page() && has_post_thumbnail() ) {
 			remove_action( 'genesis_entry_header', 'genesis_do_post_title' );
 			add_filter( 'body_class', 'ewp_gsc_body_class_featured_with_h1' );
 			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
@@ -116,11 +127,31 @@ class EWP_Genesis_Simple_Customizations {
 		}
 		return;
 	}
-	function ewp_gsc_display_featured_image_above_post_content_without_h1( ) {
-		if ( has_post_thumbnail( ) && is_singular() ) {
+	function ewp_gsc_display_featured_image_above_page_content_without_h1() {
+		if ( is_page() && has_post_thumbnail() ) {
 			add_filter( 'body_class', 'ewp_gsc_body_class_featured_without_h1' );
 			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
-			echo '<div style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div style="position: relative; top: 50%; transform: translateY(-50%);">';
+			echo '<div class="featured-image-background" style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div style="position: relative; top: 50%; transform: translateY(-50%);">';
+			echo '</div></div>';
+		}
+		return;
+	}
+	function ewp_gsc_display_featured_image_above_post_content_with_h1( ) {
+		if ( is_single() && has_post_thumbnail() ) {
+			remove_action( 'genesis_entry_header', 'genesis_do_post_title' );
+			add_filter( 'body_class', 'ewp_gsc_body_class_featured_with_h1' );
+			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
+			echo '<div class="featured-image-background" style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div class="featured-image-inner" style="position: relative; top: 50%; transform: translateY(-50%);">';
+			echo '<h1 class="featured-image">' . get_the_title() . '</h1>';
+			echo '</div></div>';
+		}
+		return;
+	}
+	function ewp_gsc_display_featured_image_above_post_content_without_h1() {
+		if ( is_single() && has_post_thumbnail() ) {
+			add_filter( 'body_class', 'ewp_gsc_body_class_featured_without_h1' );
+			$featured_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
+			echo '<div class="featured-image-background" style="background: url(' .  $featured_image_url[0] . ') center center no-repeat #000000; height: ' . $featured_image_url[2] . 'px; -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d;"><div style="position: relative; top: 50%; transform: translateY(-50%);">';
 			echo '</div></div>';
 		}
 		return;
@@ -183,6 +214,8 @@ class EWP_Genesis_Simple_Customizations {
 			'remove_footer' => 'Remove Footer',
 			'remove_edit_link' => 'Remove "(Edit)" Link from Frontend',
 			'add_featured_image_support_to_pages' => 'Add Featured Image Support to Pages',
+			'display_featured_image_above_page_content_with_h1' => 'Display Featured Image Above Page Content with H1 Centered Inside',
+			'display_featured_image_above_page_content_without_h1' => 'Display Featured Image Above Page Content with Nothing Inside',
 			'display_featured_image_above_post_content_with_h1' => 'Display Featured Image Above Post Content with H1 Centered Inside',
 			'display_featured_image_above_post_content_without_h1' => 'Display Featured Image Above Post Content with Nothing Inside',
 			'display_category_descriptions' => 'Display Category Descriptions Above Category Archives',
